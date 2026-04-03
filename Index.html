@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DealStudio Pro — IB Valuation & Risk Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+/* ── Reset & Base ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:14px;}
+body{
+  background:#090c10;
+  color:#e8edf2;
+  font-family:'IBM Plex Sans',sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:#0d1117;}
+::-webkit-scrollbar-thumb{background:#1e2a35;border-radius:2px;}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
+input:focus{outline:none;}
+
+/* ── CSS Variables ── */
+:root{
+  --bg:#090c10;
+  --surface:#0d1117;
+  --panel:#111820;
+  --panel-hi:#141e2a;
+  --border:#1e2a35;
+  --border-hi:#2a3a4a;
+  --gold:#c9a84c;
+  --gold-light:#e8c870;
+  --gold-dim:#8a6e30;
+  --gold-faint:#1a1507;
+  --mint:#2ecc8f;
+  --mint-dim:#1a7a55;
+  --red:#e05a5a;
+  --red-dim:#7a2a2a;
+  --blue:#5a9ee0;
+  --blue-dim:#2a4a7a;
+  --amber:#e8a020;
+  --text:#e8edf2;
+  --text-mid:#9aaab8;
+  --text-dim:#6b7f92;
+}
+
+/* ── Typography ── */
+.serif{font-family:'Playfair Display',serif;}
+.mono{font-family:'IBM Plex Mono',monospace;}
+.label{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:9px;
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  color:var(--text-dim);
+}
+.label.accent{color:var(--gold-dim);}
+
+/* ── Layout ── */
+#app{position:relative;min-height:100vh;}
+.grain{
+  position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.035'/%3E%3C/svg%3E");
+}
+.ambient{
+  position:fixed;top:-180px;left:50%;transform:translateX(-50%);
+  width:700px;height:360px;border-radius:50%;
+  background:radial-gradient(ellipse,rgba(201,168,76,.05) 0%,transparent 70%);
+  pointer-events:none;z-index:0;
+}
+
+/* ── Nav ── */
+#nav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(13,17,23,.92);
+  backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border);
+}
+.nav-inner{
+  max-width:1240px;margin:0 auto;padding:0 28px;
+  display:flex;align-items:center;justify-content:space-between;
+  height:52px;
+}
+.nav-brand{display:flex;align-items:baseline;gap:10px;}
+.nav-brand .wordmark{
+  font-family:'Playfair Display',serif;
+  font-size:21px;font-weight:700;
+  color:var(--gold);letter-spacing:-.01em;
+}
+.nav-brand .version{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:9px;color:var(--text-dim);
+  letter-spacing:.18em;text-transform:uppercase;
+}
+.nav-tabs{display:flex;gap:2px;}
+.nav-tab{
+  padding:5px 16px;border:none;background:transparent;
+  border-bottom:2px solid transparent;
+  color:var(--text-dim);
+  font-family:'IBM Plex Mono',monospace;
+  font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  cursor:pointer;transition:all .15s;font-weight:400;
+}
+.nav-tab.active{
+  color:var(--gold);
+  border-bottom:2px solid var(--gold);
+  font-weight:600;
+}
+.nav-badge{
+  background:var(--gold-faint);
+  border:1px solid var(--gold-dim);
+  border-radius:4px;padding:3px 10px;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:9px;color:var(--gold-dim);
+  letter-spacing:.1em;text-transform:uppercase;
+}
+
+/* ── Content ── */
+#content{
+  max-width:1240px;margin:0 auto;
+  padding:28px 28px 64px;
+  position:relative;z-index:1;
+}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* ── Section title ── */
+.section-title{
+  font-family:'Playfair Display',serif;
+  font-size:22px;font-weight:600;
+  color:var(--text);letter-spacing:-.01em;
+  margin-bottom:4px;
+}
+.section-sub{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:10px;color:var(--text-dim);
+  margin-bottom:20px;
+}
+
+/* ── Rule ── */
+.rule{
+  display:flex;align-items:center;gap:12px;
+  margin:20px 0 14px;
+}
+.rule-line{
+  flex:1;height:1px;
+  background:linear-gradient(90deg,rgba(138,110,48,.5),transparent);
+}
+
+/* ── Grid helpers ── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+.grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;}
+.grid-5{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+.grid-6{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;}
+@media(max-width:900px){
+  .grid-3,.grid-4,.grid-5,.grid-6{grid-template-columns:1fr 1fr;}
+  .grid-6{grid-template-columns:repeat(3,1fr);}
+}
+
+/* ── Panel ── */
+.panel{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:7px;
+  padding:18px 20px;
+}
+.panel.accent-top{position:relative;overflow:hidden;}
+.panel.accent-top::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,rgba(201,168,76,0),var(--gold),rgba(201,168,76,0));
+}
+
+/* ── KPI Card ── */
+.kpi{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:14px 16px;
+  display:flex;flex-direction:column;gap:5px;
+  position:relative;overflow:hidden;
+}
+.kpi.accent{border-color:rgba(201,168,76,.3);}
+.kpi.accent::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,rgba(201,168,76,0),var(--gold),rgba(201,168,76,0));
+}
+.kpi.warn{border-color:rgba(224,90,90,.3);}
+.kpi-label{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:9px;text-transform:uppercase;
+  letter-spacing:.14em;color:var(--text-dim);
+}
+.kpi-value{
+  font-family:'Playfair Display',serif;
+  font-size:24px;font-weight:600;
+  color:var(--text);line-height:1;letter-spacing:-.02em;
+}
+.kpi.accent .kpi-value{color:var(--gold);}
+.kpi.warn .kpi-value{color:var(--red);}
+.kpi-sub{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:10px;color:var(--text-dim);
+}
+.kpi-delta-up{color:var(--mint);font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;}
+.kpi-delta-dn{color:var(--red);font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;}
+
+/* ── Input ── */
+.input-group{display:flex;flex-direction:column;gap:4px;}
+.input-wrap{
+  display:flex;align-items:center;
+  background:var(--panel-hi);
+  border:1px solid var(--border);border-radius:4px;overflow:hidden;
+}
+.input-wrap input{
+  flex:1;background:transparent;border:none;
+  color:var(--text);font-family:'IBM Plex Mono',monospace;
+  font-size:12px;padding:7px 10px;
+}
+.input-unit{
+  padding:0 8px;color:var(--text-dim);
+  font-family:'IBM Plex Mono',monospace;font-size:10px;
+}
+
+/* ── Table ── */
+.ds-table{
+  width:100%;border-collapse:collapse;
+  font-family:'IBM Plex Mono',monospace;font-size:11px;
+}
+.ds-table th{
+  padding:8px 12px;color:var(--text-dim);
+  font-weight:400;font-size:9px;text-transform:uppercase;
+  letter-spacing:.12em;border-bottom:1px solid var(--border);
+  text-align:right;
+}
+.ds-table th:first-child{text-align:left;}
+.ds-table td{
+  padding:7px 12px;border-bottom:1px solid rgba(30,42,53,.3);
+  text-align:right;color:var(--text-mid);
+}
+.ds-table td:first-child{text-align:left;}
+.ds-table tr:nth-child(even) td{background:rgba(20,30,42,.3);}
+.ds-table .td-gold{color:var(--gold);font-weight:500;}
+.ds-table .td-mint{color:var(--mint);font-weight:500;}
+.ds-table .td-text{color:var(--text);}
+.ds-table .td-blue{color:var(--blue);}
+.ds-table .td-red{color:var(--red);}
+.ds-table .tr-total td{
+  border-top:1px solid var(--border);
+  background:var(--gold-faint);color:var(--gold);font-weight:600;
+}
+
+/* ── Heatmap cells ── */
+.hc-base{background:rgba(26,21,7,.8);color:var(--gold);font-weight:600;}
+.hc-up2{background:rgba(26,122,85,.4);color:var(--mint);}
+.hc-up1{background:rgba(26,122,85,.2);color:rgba(46,204,143,.7);}
+.hc-dn1{background:rgba(122,42,42,.2);color:rgba(224,90,90,.7);}
+.hc-dn2{background:rgba(122,42,42,.4);color:var(--red);}
+
+/* ── Bar ── */
+.bar-track{
+  flex:1;height:9px;background:var(--border);
+  border-radius:5px;overflow:hidden;
+}
+.bar-fill{height:100%;border-radius:5px;transition:width .4s ease;}
+
+/* ── Performance chart ── */
+.perf-chart-wrap{margin-top:16px;}
+.chart-legend{display:flex;gap:16px;margin-bottom:8px;}
+.legend-item{display:flex;align-items:center;gap:6px;}
+.legend-dot{width:20px;height:2px;border-radius:1px;}
+
+/* ── Toggle ── */
+.toggle{
+  display:flex;background:var(--panel);
+  border:1px solid var(--border);border-radius:5px;padding:2px;gap:2px;
+}
+.toggle-btn{
+  padding:4px 14px;border-radius:3px;border:none;
+  background:transparent;color:var(--text-dim);
+  font-family:'IBM Plex Mono',monospace;font-size:10px;
+  cursor:pointer;letter-spacing:.08em;text-transform:uppercase;
+  transition:all .15s;font-weight:400;
+}
+.toggle-btn.active{
+  background:var(--gold);color:var(--bg);font-weight:600;
+}
+
+/* ── Rating badge ── */
+.rating-badge{
+  border-radius:5px;padding:8px 20px;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:18px;font-weight:700;
+  text-align:center;
+}
+
+/* ── Animations ── */
+@keyframes shimmer{
+  0%{transform:translateX(-200%);}
+  100%{transform:translateX(200%);}
+}
+@keyframes fadeIn{
+  from{opacity:0;transform:translateY(8px);}
+  to{opacity:1;transform:translateY(0);}
+}
+.fade-in{animation:fadeIn .3s ease forwards;}
+
+/* ── Insight state ── */
+#insight-idle,#insight-loading,#insight-error,#insight-result{display:none;}
+#insight-idle.show,#insight-loading.show,#insight-error.show,#insight-result.show{display:block;}
+
+/* ── Scrollable ── */
+.scroll-x{overflow-x:auto;}
+
+/* ── Editable comp input ── */
+.comp-input{
+  width:52px;background:transparent;border:none;
+  color:var(--text);text-align:right;
+  font-family:'IBM Plex Mono',monospace;font-size:11px;
+}
+</style>
+</head>
+<body>
+<div id="app">
+<div class="grain"></div>
+<div class="ambient"></div>
+
+<!-- ══════════════ NAV ══════════════ -->
+<div id="nav">
+  <div class="nav-inner">
+    <div class="nav-brand">
+      <span class="wordmark">DealStudio</span>
+      <span class="version">Pro · v3.0</span>
+    </div>
+    <nav class="nav-tabs">
+      <button class="nav-tab active" onclick="showTab('overview')">Overview</button>
+      <button class="nav-tab" onclick="showTab('valuation')">Valuation</button>
+      <button class="nav-tab" onclick="showTab('risk')">Risk</button>
+      <button class="nav-tab" onclick="showTab('financials')">Financials</button>
+      <button class="nav-tab" onclick="showTab('insights')">Intelligence</button>
+    </nav>
+    <div class="nav-badge">Local · No API · Confidential</div>
+  </div>
+</div>
+
+<!-- ══════════════ CONTENT ══════════════ -->
+<div id="content">
+
+  <!-- ══ OVERVIEW ══ -->
+  <div id="tab-overview" class="tab-panel active">
+    <div style="background:linear-gradient(135deg,var(--panel),var(--panel-hi));border:1px solid var(--border);border-radius:8px;padding:22px 26px;position:relative;overflow:hidden;margin-bottom:16px;">
+      <div style="position:absolute;right:0;top:0;bottom:0;width:280px;background:radial-gradient(ellipse at right,rgba(201,168,76,.06),transparent 70%);pointer-events:none;"></div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div class="serif" style="font-size:32px;font-weight:700;color:var(--text);letter-spacing:-.02em;line-height:1;" id="ov-company">Reliance Industries Ltd</div>
+          <div style="display:flex;gap:10px;margin-top:8px;align-items:center;flex-wrap:wrap;">
+            <div style="background:var(--gold-faint);border:1px solid var(--gold-dim);border-radius:4px;padding:3px 10px;">
+              <span class="mono" style="font-size:11px;color:var(--gold);font-weight:500;">RELIANCE · NSE</span>
+            </div>
+            <span class="mono" style="font-size:11px;color:var(--text-dim);">Energy · Petrochemicals · Telecom · Retail</span>
+            <span style="width:1px;height:12px;background:var(--border);display:inline-block;"></span>
+            <span class="mono" style="font-size:11px;color:var(--text-dim);">Mkt Cap: <span style="color:var(--text-mid);">₹19.5L Cr</span></span>
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div class="serif" style="font-size:28px;font-weight:600;color:var(--mint);" id="ov-perf">+14.2%</div>
+          <div class="mono" style="font-size:10px;color:var(--text-dim);">1Y Return</div>
+        </div>
+      </div>
+      <!-- Performance chart -->
+      <div class="perf-chart-wrap">
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--gold);"></div><span class="mono" style="font-size:10px;color:var(--text-dim);">RELIANCE</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--blue);border-top:2px dashed var(--blue);"></div><span class="mono" style="font-size:10px;color:var(--text-dim);">NIFTY 50</span></div>
+        </div>
+        <svg id="perf-svg" width="100%" height="88" viewBox="0 0 800 88" preserveAspectRatio="none" style="display:block;"></svg>
+      </div>
+    </div>
+
+    <!-- KPIs row 1 -->
+    <div class="grid-5" style="margin-bottom:14px;" id="ov-kpis-1"></div>
+    <!-- Rule -->
+    <div class="rule"><span class="label accent">Key Financial Snapshot</span><div class="rule-line"></div></div>
+    <!-- KPIs row 2 -->
+    <div class="grid-4" id="ov-kpis-2"></div>
+  </div>
+
+  <!-- ══ VALUATION ══ -->
+  <div id="tab-valuation" class="tab-panel">
+    <div class="section-title">DCF Valuation Engine</div>
+    <div class="section-sub">Drivers-based FCFF model · Blended GGM + Exit Multiple terminal value · Sensitivity matrices</div>
+
+    <div class="grid-3" style="margin-bottom:20px;">
+      <!-- Col 1 -->
+      <div class="panel">
+        <div class="rule" style="margin-top:0;"><span class="label accent">Revenue Drivers</span><div class="rule-line"></div></div>
+        <div style="display:flex;flex-direction:column;gap:9px;">
+          <div class="input-group"><div class="label">Base Revenue (₹ Cr)</div><div class="input-wrap"><input type="number" id="i-baseRev" value="880000"/><span class="input-unit">Cr</span></div></div>
+          <div class="input-group"><div class="label">Revenue Growth</div><div class="input-wrap"><input type="number" id="i-revGrowth" value="12.0" step="0.1"/><span class="input-unit">%</span></div></div>
+          <div class="input-group"><div class="label">EBITDA Margin</div><div class="input-wrap"><input type="number" id="i-ebitdaMargin" value="18.5" step="0.1"/><span class="input-unit">%</span></div></div>
+          <div class="input-group"><div class="label">Tax Rate</div><div class="input-wrap"><input type="number" id="i-taxRate" value="25.0" step="0.5"/><span class="input-unit">%</span></div></div>
+          <div class="input-group"><div class="label">D&amp;A (₹ Cr)</div><div class="input-wrap"><input type="number" id="i-da" value="28000"/><span class="input-unit">Cr</span></div></div>
+        </div>
+      </div>
+      <!-- Col 2 -->
+      <div class="panel">
+        <div class="rule" style="margin-top:0;"><span class="label accent">Capex &amp; Working Capital</span><div class="rule-line"></div></div>
+        <div style="display:flex;flex-direction:column;gap:9px;">
+          <div class="input-group"><div class="label">Capex (₹ Cr)</div><div class="input-wrap"><input type="number" id="i-capex" value="55000"/><span class="input-unit">Cr</span></div></div>
+          <div class="input-group"><div class="label">NWC Change % Rev</div><div class="input-wrap"><input type="number" id="i-nwcPct" value="1.3" step="0.1"/><span class="input-unit">%</span></div></div>
+          <div class="input-group"><div class="label">Net Debt (₹ Cr)</div><div class="input-wrap"><input type="number" id="i-netDebt" value="120000"/><span class="input-unit">Cr</span></div></div>
+          <div class="input-group"><div class="label">Shares Outstanding (Cr)</div><div class="input-wrap"><input type="number" id="i-shares" value="6766"/><span class="input-unit">Cr</span></div></div>
+          <div class="input-group"><div class="label">Projection Years</div><div class="input-wrap"><input type="number" id="i-years" value="5" min="3" max="10" step="1"/></div></div>
+        </div>
+      </div>
+      <!-- Col 3: Discount + Live Output -->
+      <div class="panel">
+        <div class="rule" style="margin-top:0;"><span class="label accent">Discount &amp; Terminal</span><div class="rule-line"></div></div>
+        <div style="display:flex;flex-direction:column;gap:9px;">
+          <div class="input-group"><div class="label">WACC</div><div class="input-wrap"><input type="number" id="i-wacc" value="11.2" step="0.1"/><span class="input-unit">%</span></div></div>
+          <div class="input-group"><div class="label">Terminal Growth Rate</div><div class="input-wrap"><input type="number" id="i-tgr" value="5.0" step="0.1"/><span class="input-unit">%</span></div></div>
+          <div class="input-group"><div class="label">Exit EV/EBITDA</div><div class="input-wrap"><input type="number" id="i-exitMult" value="10" step="0.5"/><span class="input-unit">x</span></div></div>
+        </div>
+        <div class="rule"><span class="label accent">Live Output</span><div class="rule-line"></div></div>
+        <div id="dcf-output-rows" style="display:flex;flex-direction:column;gap:0;"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0 0;border-top:1px solid var(--border);margin-top:6px;">
+          <span class="mono" style="font-size:10px;color:var(--gold-dim);font-weight:500;text-transform:uppercase;letter-spacing:.1em;">Intrinsic Value / Share</span>
+          <span class="mono" style="font-size:15px;color:var(--gold);font-weight:600;" id="dcf-price">₹—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Projection table -->
+    <div class="rule"><span class="label accent">FCFF Projection Schedule</span><div class="rule-line"></div></div>
+    <div class="scroll-x">
+      <table class="ds-table" id="proj-table">
+        <thead><tr>
+          <th style="text-align:left;">Year</th>
+          <th>Rev Growth</th><th>Revenue</th><th>EBITDA</th>
+          <th>EBIT</th><th>NOPAT</th><th>FCFF</th><th>PV(FCFF)</th>
+        </tr></thead>
+        <tbody id="proj-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- Sensitivity -->
+    <div class="rule" style="margin-top:22px;"><span class="label accent">Sensitivity — Intrinsic Value per Share (WACC × TGR)</span><div class="rule-line"></div></div>
+    <div class="scroll-x">
+      <table class="ds-table" id="sens-table" style="margin-bottom:10px;"></table>
+    </div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:4px;">
+      <div style="display:flex;gap:5px;align-items:center;"><div style="width:8px;height:8px;border-radius:2px;background:var(--mint);"></div><span class="mono" style="font-size:9px;color:var(--text-dim);">Upside &gt;12%</span></div>
+      <div style="display:flex;gap:5px;align-items:center;"><div style="width:8px;height:8px;border-radius:2px;background:rgba(46,204,143,.5);"></div><span class="mono" style="font-size:9px;color:var(--text-dim);">Upside 4–12%</span></div>
+      <div style="display:flex;gap:5px;align-items:center;"><div style="width:8px;height:8px;border-radius:2px;background:var(--gold);"></div><span class="mono" style="font-size:9px;color:var(--text-dim);">Base Case</span></div>
+      <div style="display:flex;gap:5px;align-items:center;"><div style="width:8px;height:8px;border-radius:2px;background:rgba(224,90,90,.5);"></div><span class="mono" style="font-size:9px;color:var(--text-dim);">Downside 4–12%</span></div>
+      <div style="display:flex;gap:5px;align-items:center;"><div style="width:8px;height:8px;border-radius:2px;background:var(--red);"></div><span class="mono" style="font-size:9px;color:var(--text-dim);">Downside &gt;12%</span></div>
+    </div>
+  </div>
+
+  <!-- ══ RISK ══ -->
+  <div id="tab-risk" class="tab-panel">
+    <div class="section-title">Beta &amp; Risk Engine</div>
+    <div class="section-sub">Beta decomposition · CAPM · WACC · Risk metrics · Comparable re-levering · Sensitivity</div>
+
+    <div class="grid-3" style="margin-bottom:20px;">
+      <!-- Col 1 -->
+      <div class="panel">
+        <div class="rule" style="margin-top:0;"><span class="label accent">Beta &amp; Leverage</span><div class="rule-line"></div></div>
+        <div style="background:var(--panel-hi);border:1px solid var(--border);border-radius:5px;padding:10px 12px;margin-bottom:10px;">
+          <div class="label">Regression Beta (computed)</div>
+          <div class="serif" style="font-size:22px;color:var(--blue);margin-top:3px;" id="r-regbeta">—</div>
+          <div class="mono" style="font-size:9px;color:var(--text-dim);">vs NIFTY 50 · 1Y daily returns</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:9px;">
+          <div class="input-group"><div class="label">Manual / Override Beta</div><div class="input-wrap"><input type="number" id="r-rawBeta" value="0.92" step="0.01"/></div></div>
+          <div class="input-group"><div class="label">Debt / Equity Ratio</div><div class="input-wrap"><input type="number" id="r-de" value="0.42" step="0.01"/></div></div>
+          <div class="input-group"><div class="label">Tax Rate</div><div class="input-wrap"><input type="number" id="r-taxRate" value="25.0" step="0.5"/><span class="input-unit">%</span></div></div>
+          <div class="input-group"><div class="label">Alpha Adj (Size/Liquidity)</div><div class="input-wrap"><input type="number" id="r-alpha" value="0.50" step="0.1"/><span class="input-unit">%</span></div></div>
+        </div>
+      </div>
+      <!-- Col 2 -->
+      <div class="panel">
+        <div class="rule" style="margin-top:0;"><span class="label accent">CAPM Parameters</span><div class="rule-line"></div></div>
+        <div style="display:flex;flex-direction:column;gap:9px;">
+          <div class="input-group"><div class="label">Risk-Free Rate (10Y G-Sec)</div><div class="input-wrap"><input type="number" id="r-rf" value="6.80" step="0.05"/><span class="input-unit">%</span></div></div>
+          <div class="input-group"><div class="label">Equity Risk Premium (India)</div><div class="input-wrap"><input type="number" id="r-erp" value="5.50" step="0.1"/><span class="input-unit">%</span></div></div>
+          <div class="input-group"><div class="label">Pre-Tax Cost of Debt</div><div class="input-wrap"><input type="number" id="r-kd" value="7.50" step="0.1"/><span class="input-unit">%</span></div></div>
+          <div class="input-group"><div class="label">Equity Weight</div><div class="input-wrap"><input type="number" id="r-we" value="71.0" step="0.5"/><span class="input-unit">%</span></div></div>
+          <div class="input-group"><div class="label">Debt Weight</div><div class="input-wrap"><input type="number" id="r-wd" value="29.0" step="0.5"/><span class="input-unit">%</span></div></div>
+        </div>
+      </div>
+      <!-- Col 3: Live output -->
+      <div class="panel">
+        <div class="rule" style="margin-top:0;"><span class="label accent">Beta Output</span><div class="rule-line"></div></div>
+        <div id="beta-output-rows" style="display:flex;flex-direction:column;gap:0;"></div>
+        <div class="rule"><span class="label accent">CAPM Output</span><div class="rule-line"></div></div>
+        <div id="capm-output-rows" style="display:flex;flex-direction:column;gap:0;"></div>
+      </div>
+    </div>
+
+    <!-- Risk Metrics -->
+    <div class="rule"><span class="label accent">Quantitative Risk Metrics</span><div class="rule-line"></div></div>
+    <div class="grid-6" style="margin-bottom:20px;" id="risk-metrics-grid"></div>
+
+    <!-- Ke decomposition -->
+    <div class="rule"><span class="label accent">Cost of Equity — Risk Decomposition</span><div class="rule-line"></div></div>
+    <div class="panel" style="margin-bottom:20px;">
+      <div id="ke-bars" style="display:flex;flex-direction:column;gap:13px;"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid var(--border);margin-top:10px;">
+        <span class="mono" style="font-size:10px;color:var(--gold-dim);font-weight:500;text-transform:uppercase;letter-spacing:.1em;">Total Cost of Equity (Ke)</span>
+        <span class="mono" style="font-size:14px;color:var(--gold);font-weight:600;" id="ke-total">—</span>
+      </div>
+    </div>
+
+    <!-- Charts row -->
+    <div class="grid-2" style="margin-bottom:20px;">
+      <div class="panel">
+        <div class="rule" style="margin-top:0;"><span class="label accent">Rolling 30-Day Volatility (Ann.)</span><div class="rule-line"></div></div>
+        <svg id="vol-svg" width="100%" height="70" viewBox="0 0 600 70" preserveAspectRatio="none" style="display:block;margin-top:4px;"></svg>
+        <div style="display:flex;justify-content:space-between;margin-top:6px;">
+          <span class="mono" style="font-size:9px;color:var(--text-dim);">52W Ago</span>
+          <span class="mono" style="font-size:9px;color:var(--amber);" id="vol-current">—</span>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="rule" style="margin-top:0;"><span class="label accent">Daily Return Distribution</span><div class="rule-line"></div></div>
+        <div id="ret-dist" style="display:flex;gap:1px;align-items:flex-end;height:60px;margin-top:8px;"></div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px;">
+          <span class="mono" style="font-size:9px;color:var(--red);">−5%</span>
+          <span class="mono" style="font-size:9px;color:var(--text-dim);">Daily Returns</span>
+          <span class="mono" style="font-size:9px;color:var(--mint);">+5%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comp table -->
+    <div class="rule"><span class="label accent">Comparable Company Beta — Hamada Re-Levering</span><div class="rule-line"></div></div>
+    <div class="scroll-x" style="margin-bottom:20px;">
+      <table class="ds-table" id="comp-table">
+        <thead><tr>
+          <th style="text-align:left;">Company</th>
+          <th>Raw β</th><th>D/E</th>
+          <th>Unlevered β</th><th>Re-Levered β</th><th>Ke (CAPM)</th>
+        </tr></thead>
+        <tbody id="comp-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- Ke sensitivity -->
+    <div class="rule"><span class="label accent">Ke Sensitivity — Beta × ERP</span><div class="rule-line"></div></div>
+    <div class="scroll-x">
+      <table class="ds-table" id="ke-sens-table"></table>
+    </div>
+  </div>
+
+  <!-- ══ FINANCIALS ══ -->
+  <div id="tab-financials" class="tab-panel">
+    <div class="section-title">Financial Statements</div>
+    <div class="section-sub">5-year historical financials · Margin analysis · Capital efficiency ratios</div>
+
+    <div class="grid-2" style="margin-bottom:20px;">
+      <div class="panel">
+        <div class="rule" style="margin-top:0;"><span class="label accent">Revenue (₹ Cr)</span><div class="rule-line"></div></div>
+        <svg id="rev-chart" width="100%" height="80" viewBox="0 0 400 80" preserveAspectRatio="none" style="display:block;margin-top:4px;"></svg>
+        <div style="display:flex;justify-content:space-between;margin-top:8px;">
+          <span class="mono" style="font-size:9px;color:var(--text-dim);">5Y CAGR</span>
+          <span class="mono" style="font-size:10px;color:var(--blue);font-weight:500;">+11.1%</span>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="rule" style="margin-top:0;"><span class="label accent">EBITDA (₹ Cr)</span><div class="rule-line"></div></div>
+        <svg id="ebitda-chart" width="100%" height="80" viewBox="0 0 400 80" preserveAspectRatio="none" style="display:block;margin-top:4px;"></svg>
+        <div style="display:flex;justify-content:space-between;margin-top:8px;">
+          <span class="mono" style="font-size:9px;color:var(--text-dim);">5Y CAGR</span>
+          <span class="mono" style="font-size:10px;color:var(--gold);font-weight:500;">+16.7%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- P&L table -->
+    <div class="rule"><span class="label accent">Income Statement — 5Y Historical</span><div class="rule-line"></div></div>
+    <div class="scroll-x" style="margin-bottom:20px;">
+      <table class="ds-table" id="pl-table"></table>
+    </div>
+
+    <!-- BS KPIs -->
+    <div class="rule"><span class="label accent">Balance Sheet &amp; Capital Efficiency</span><div class="rule-line"></div></div>
+    <div class="grid-4" id="bs-kpis"></div>
+  </div>
+
+  <!-- ══ INTELLIGENCE ══ -->
+  <div id="tab-insights" class="tab-panel">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
+      <div>
+        <div class="section-title">Intelligence Layer</div>
+        <div class="section-sub">AI-generated analyst commentary · Investment thesis · Bull/bear · Risk assessment</div>
+      </div>
+      <button id="gen-btn" onclick="generateInsights()" style="
+        padding:10px 22px;background:var(--gold-faint);
+        border:1px solid var(--gold-dim);border-radius:6px;
+        color:var(--gold);font-family:'IBM Plex Mono',monospace;
+        font-size:11px;cursor:pointer;letter-spacing:.1em;
+        text-transform:uppercase;font-weight:500;
+        display:flex;align-items:center;gap:8px;
+        transition:all .2s;white-space:nowrap;
+      ">⚡ Generate Insights</button>
+    </div>
+
+    <!-- Idle -->
+    <div id="insight-idle" class="show">
+      <div style="background:var(--panel);border:1px dashed var(--border);border-radius:8px;padding:48px 32px;text-align:center;">
+        <div class="serif" style="font-size:20px;color:var(--text-dim);margin-bottom:8px;">AI Analyst Ready</div>
+        <div class="mono" style="font-size:11px;color:var(--text-dim);">Click "Generate Insights" to produce institutional-grade investment commentary using all module inputs.</div>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div id="insight-loading">
+      <div style="background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:48px 32px;text-align:center;">
+        <div class="serif" style="font-size:18px;color:var(--text-mid);">Synthesising financial data...</div>
+        <div style="margin-top:16px;height:2px;background:var(--border);border-radius:1px;overflow:hidden;">
+          <div style="height:100%;background:linear-gradient(90deg,transparent,var(--gold),transparent);width:60%;animation:shimmer 1.5s infinite;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div id="insight-error">
+      <div style="background:rgba(122,42,42,.2);border:1px solid rgba(224,90,90,.3);border-radius:8px;padding:20px;">
+        <span class="mono" style="font-size:11px;color:var(--red);">Failed to generate insights. Check API connectivity and try again.</span>
+      </div>
+    </div>
+
+    <!-- Result -->
+    <div id="insight-result" class="fade-in"></div>
+  </div>
+
+</div><!-- /content -->
+</div><!-- /app -->
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   DEALSTUDIO PRO — Core Engine
+   Self-contained · No dependencies · GitHub Pages ready
+════════════════════════════════════════════════════════════ */
+
+/* ── Helpers ─────────────────────────────────────────────── */
+const n2 = v => (isNaN(v)||v==null)?"—":v.toFixed(2);
+const n1 = v => (isNaN(v)||v==null)?"—":v.toFixed(1);
+const pct = (v,d=1) => isNaN(v)?"—":`${(v*100).toFixed(d)}%`;
+const cr = v => {
+  if(isNaN(v)||v==null) return "—";
+  const a=Math.abs(v), s=v<0?"-":"";
+  if(a>=1e5) return `${s}₹${(a/1e5).toFixed(2)}L Cr`;
+  if(a>=1e3) return `${s}₹${(a/1e3).toFixed(1)}K Cr`;
+  return `${s}₹${a.toFixed(0)} Cr`;
+};
+const clamp=(v,lo,hi)=>Math.min(hi,Math.max(lo,v));
+const el = id => document.getElementById(id);
+const gv = id => parseFloat(el(id).value)||0;
+
+/* ── Price series (seeded LCG — deterministic, no API) ───── */
+function genPrices(seed,n=252,start=1000,vol=0.018,drift=0.0004){
+  let p=start,s=seed;
+  const rand=()=>{s=(s*1664525+1013904223)&0xffffffff;return(s>>>0)/0xffffffff;};
+  const arr=[p];
+  for(let i=1;i<n;i++){
+    const u1=rand(),u2=rand();
+    const z=Math.sqrt(-2*Math.log(Math.max(u1,1e-10)))*Math.cos(2*Math.PI*u2);
+    p=p*Math.exp(drift+vol*z);arr.push(p);
+  }
+  return arr;
+}
+const STOCK = genPrices(7,252,2850,0.016,0.0005);
+const BENCH = genPrices(42,252,19800,0.012,0.0003);
+
+/* ── Quant ───────────────────────────────────────────────── */
+function returns(prices){return prices.slice(1).map((p,i)=>(p-prices[i])/prices[i]);}
+function beta(sr,mr){
+  const n=Math.min(sr.length,mr.length);
+  const s=sr.slice(0,n),m=mr.slice(0,n);
+  const ms=s.reduce((a,b)=>a+b,0)/n, mm=m.reduce((a,b)=>a+b,0)/n;
+  let cov=0,vm=0;
+  for(let i=0;i<n;i++){cov+=(s[i]-ms)*(m[i]-mm);vm+=(m[i]-mm)**2;}
+  return cov/vm;
+}
+function vol(rets){
+  const n=rets.length,mean=rets.reduce((a,b)=>a+b,0)/n;
+  return Math.sqrt(rets.reduce((a,b)=>a+(b-mean)**2,0)/(n-1)*252);
+}
+function sharpe(rets,rf=0.068){
+  return (rets.reduce((a,b)=>a+b,0)/rets.length*252-rf)/vol(rets);
+}
+function sortino(rets,rf=0.068){
+  const rfd=rf/252,dn=rets.filter(r=>r<rfd);
+  if(!dn.length) return 99;
+  const dv=Math.sqrt(dn.reduce((a,r)=>a+(r-rfd)**2,0)/dn.length*252);
+  return (rets.reduce((a,b)=>a+b,0)/rets.length*252-rf)/dv;
+}
+function maxDD(prices){
+  let peak=prices[0],dd=0;
+  for(const p of prices){if(p>peak)peak=p;dd=Math.max(dd,(peak-p)/peak);}
+  return dd;
+}
+function VaR(rets,c=0.95){
+  return -[...rets].sort((a,b)=>a-b)[Math.floor((1-c)*rets.length)];
+}
+function blume(b){return 0.333+0.667*b;}
+
+const SR = returns(STOCK);
+const BR = returns(BENCH);
+const REG_BETA = beta(SR,BR);
+
+/* ── Tab switching ───────────────────────────────────────── */
+function showTab(id){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(b=>b.classList.remove('active'));
+  el('tab-'+id).classList.add('active');
+  const tabs=['overview','valuation','risk','financials','insights'];
+  const idx=tabs.indexOf(id);
+  document.querySelectorAll('.nav-tab')[idx].classList.add('active');
+  if(id==='valuation') calcDCF();
+  if(id==='risk') calcRisk();
+  if(id==='financials') renderFinancials();
+}
+
+/* ════ OVERVIEW ════════════════════════════════════════════ */
+function renderOverview(){
+  // Perf chart
+  const norm=arr=>arr.map(v=>v/arr[0]*100);
+  const ns=norm(STOCK), nb=norm(BENCH);
+  const minV=Math.min(...ns,...nb)-2, maxV=Math.max(...ns,...nb)+2;
+  const py=v=>88-(v-minV)/(maxV-minV)*88;
+  const px=(i,len)=>i/(len-1)*800;
+  const sPts=ns.map((v,i)=>`${px(i,ns.length)},${py(v)}`).join(' ');
+  const bPts=nb.map((v,i)=>`${px(i,nb.length)},${py(v)}`).join(' ');
+  el('perf-svg').innerHTML=`
+    <polygon points="0,88 ${sPts} 800,88" fill="rgba(201,168,76,0.1)"/>
+    <polyline points="${sPts}" fill="none" stroke="#c9a84c" stroke-width="1.8" stroke-linejoin="round"/>
+    <polyline points="${bPts}" fill="none" stroke="#5a9ee0" stroke-width="1.2" stroke-linejoin="round" stroke-dasharray="4 3"/>
+  `;
+  const perf=(STOCK[STOCK.length-1]-STOCK[0])/STOCK[0];
+  el('ov-perf').textContent=(perf>=0?'+':'')+pct(perf);
+  el('ov-perf').style.color=perf>=0?'var(--mint)':'var(--red)';
+
+  // KPIs row 1
+  const dcf=getDCFOutput();
+  const benchPerf=(BENCH[BENCH.length-1]-BENCH[0])/BENCH[0];
+  const alpha=perf-benchPerf;
+  const v=vol(SR), sh=sharpe(SR), mdd=maxDD(STOCK);
+  const kpis1=[
+    {l:'Intrinsic Value',v:`₹${n1(dcf.price)}`,s:'DCF Fair Value',accent:true},
+    {l:'Annualised Vol',v:pct(v),s:'1Y Historical',warn:v>0.35},
+    {l:'Sharpe Ratio',v:n2(sh),s:'Risk-adj return',accent:sh>1},
+    {l:'Max Drawdown',v:pct(mdd),s:'1Y Period',warn:mdd>0.25},
+    {l:'Alpha vs Nifty',v:(alpha>=0?'+':'')+pct(alpha),s:'1Y Excess return',accent:alpha>0,warn:alpha<0},
+  ];
+  el('ov-kpis-1').innerHTML=kpis1.map(k=>kpiHtml(k)).join('');
+
+  const kpis2=[
+    {l:'Revenue',v:cr(880000),s:'TTM'},
+    {l:'EBITDA',v:cr(162800),s:'Margin: 18.5%'},
+    {l:'Net Profit',v:cr(66700),s:'NPM: 7.6%'},
+    {l:'EV/EBITDA',v:'10.8x',s:'vs Sector avg'},
+    {l:'P/E (TTM)',v:'27.4x',s:'Trailing'},
+    {l:'ROCE',v:'10.2%',s:'Return on CE'},
+    {l:'Net D/E',v:'0.42x',s:'Leverage ratio'},
+    {l:'FCF Yield',v:'2.4%',s:'FCF / Mkt Cap'},
+  ];
+  el('ov-kpis-2').innerHTML=kpis2.map(k=>kpiHtml(k)).join('');
+}
+
+function kpiHtml({l,v,s,accent,warn}){
+  const cls=accent?'kpi accent':warn?'kpi warn':'kpi';
+  return `<div class="${cls}">
+    <div class="kpi-label">${l}</div>
+    <div class="kpi-value">${v}</div>
+    ${s?`<div class="kpi-sub">${s}</div>`:''}
+  </div>`;
+}
+
+/* ════ VALUATION ════════════════════════════════════════════ */
+function getDCFOutput(){
+  const baseRev=gv('i-baseRev'), rg=gv('i-revGrowth')/100;
+  const em=gv('i-ebitdaMargin')/100, tax=gv('i-taxRate')/100;
+  const da=gv('i-da'), capex=gv('i-capex'), nwcPct=gv('i-nwcPct')/100;
+  const wacc=gv('i-wacc')/100, tgr=gv('i-tgr')/100;
+  const netDebt=gv('i-netDebt'), shares=gv('i-shares');
+  const years=Math.round(clamp(gv('i-years'),3,10));
+  const exitM=gv('i-exitMult');
+
+  let pvFCFF=0, lastFCFF=0, lastEBITDA=0, rev=baseRev, rows=[];
+  for(let i=1;i<=years;i++){
+    const gf=Math.max(rg-(rg-0.05)*(i/years)*0.5,0.04);
+    rev=rev*(1+gf);
+    const ebitda=rev*em, ebit=ebitda-da;
+    const nopat=ebit*(1-tax);
+    const fcff=nopat+da-capex-rev*nwcPct;
+    const pv=fcff/Math.pow(1+wacc,i);
+    pvFCFF+=pv; lastFCFF=fcff; lastEBITDA=ebitda;
+    rows.push({yr:`FY${25+i}`,gf,rev,ebitda,ebit,nopat,fcff,pv});
+  }
+  const tvGGM=(lastFCFF*(1+tgr))/(wacc-tgr)/Math.pow(1+wacc,years);
+  const tvExit=lastEBITDA*exitM/Math.pow(1+wacc,years);
+  const pvTV=(tvGGM+tvExit)/2;
+  const ev=pvFCFF+pvTV, equity=ev-netDebt;
+  return {ev,equity,pvFCFF,pvTV,price:equity/shares,rows,wacc,tgr};
+}
+
+function calcDCF(){
+  const d=getDCFOutput();
+
+  // Live output rows
+  const outRows=[
+    ['Enterprise Value',cr(d.ev)],
+    ['Equity Value',cr(d.equity)],
+    ['PV of FCFFs',cr(d.pvFCFF)],
+    ['PV of TV (Blended)',cr(d.pvTV)],
+    ['TV % of EV',pct(d.pvTV/d.ev)],
+  ];
+  el('dcf-output-rows').innerHTML=outRows.map(([l,v])=>`
+    <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(30,42,53,.3);">
+      <span class="mono" style="font-size:10px;color:var(--text-dim);">${l}</span>
+      <span class="mono" style="font-size:10px;color:var(--text-mid);font-weight:500;">${v}</span>
+    </div>`).join('');
+  el('dcf-price').textContent=`₹${n1(d.price)}`;
+
+  // Projection table
+  let tbody='';
+  d.rows.forEach((r,i)=>{
+    tbody+=`<tr>
+      <td class="td-gold">${r.yr}</td>
+      <td class="td-blue">${pct(r.gf)}</td>
+      <td>${cr(r.rev)}</td>
+      <td>${cr(r.ebitda)}</td>
+      <td>${cr(r.ebit)}</td>
+      <td class="td-text">${cr(r.nopat)}</td>
+      <td class="td-text" style="font-weight:500;">${cr(r.fcff)}</td>
+      <td class="td-mint">${cr(r.pv)}</td>
+    </tr>`;
+  });
+  tbody+=`<tr class="tr-total"><td colspan="7">Terminal Value (Blended GGM + Exit Multiple) — PV</td><td>${cr(d.pvTV)}</td></tr>`;
+  tbody+=`<tr class="tr-total"><td colspan="7" style="font-size:12px;">Enterprise Value</td><td style="font-size:13px;">${cr(d.ev)}</td></tr>`;
+  el('proj-tbody').innerHTML=tbody;
+
+  // Sensitivity
+  const waccRange=[-0.02,-0.01,0,0.01,0.02];
+  const tgrRange=[0.03,0.04,0.05,0.06,0.07];
+  let sensHtml=`<thead><tr><th style="text-align:left;">TGR ↓ WACC →</th>${waccRange.map(dw=>`<th style="color:${dw===0?'var(--gold)':'var(--text-dim)'};font-weight:${dw===0?600:400};">${pct(d.wacc+dw)}</th>`).join('')}</tr></thead><tbody>`;
+  tgrRange.forEach(tg=>{
+    sensHtml+=`<tr><td style="color:${Math.abs(tg-d.tgr)<.005?'var(--gold)':'var(--text-dim)'};font-weight:${Math.abs(tg-d.tgr)<.005?600:400};font-family:'IBM Plex Mono',monospace;font-size:10px;">${pct(tg)}</td>`;
+    waccRange.forEach(dw=>{
+      const val=calcSensPrice(d.wacc+dw,tg);
+      const diff=(val-d.price)/Math.abs(d.price);
+      let cls='';
+      if(diff>.12)cls='hc-up2';else if(diff>.04)cls='hc-up1';
+      else if(diff<-.12)cls='hc-dn2';else if(diff<-.04)cls='hc-dn1';
+      else cls='hc-base';
+      sensHtml+=`<td class="${cls}" style="padding:7px 14px;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:11px;">₹${n1(val)}</td>`;
+    });
+    sensHtml+='</tr>';
+  });
+  sensHtml+='</tbody>';
+  el('sens-table').innerHTML=sensHtml;
+}
+
+function calcSensPrice(w,tg){
+  const baseRev=gv('i-baseRev'),rg=gv('i-revGrowth')/100;
+  const em=gv('i-ebitdaMargin')/100,tax=gv('i-taxRate')/100;
+  const da=gv('i-da'),capex=gv('i-capex'),nwcPct=gv('i-nwcPct')/100;
+  const netDebt=gv('i-netDebt'),shares=gv('i-shares');
+  const years=Math.round(clamp(gv('i-years'),3,10));
+  const exitM=gv('i-exitMult');
+  let pv=0,lastF=0,lastE=0,rev=baseRev;
+  for(let i=1;i<=years;i++){
+    const gf=Math.max(rg-(rg-.05)*(i/years)*.5,.04);
+    rev*=(1+gf);
+    const ebitda=rev*em,ebit=ebitda-da;
+    const fcff=ebit*(1-tax)+da-capex-rev*nwcPct;
+    pv+=fcff/Math.pow(1+w,i); lastF=fcff; lastE=ebitda;
+  }
+  const pvTV=((lastF*(1+tg))/(w-tg)/Math.pow(1+w,years)+lastE*exitM/Math.pow(1+w,years))/2;
+  return (pv+pvTV-netDebt)/shares;
+}
+
+// Auto-recalc on input change
+['i-baseRev','i-revGrowth','i-ebitdaMargin','i-taxRate','i-da','i-capex','i-nwcPct','i-wacc','i-tgr','i-netDebt','i-shares','i-years','i-exitMult'].forEach(id=>{
+  const e=el(id); if(e) e.addEventListener('input',()=>{ if(el('tab-valuation').classList.contains('active')) calcDCF(); });
+});
+
+/* ════ RISK ═════════════════════════════════════════════════ */
+const COMPS=[
+  {name:'BPCL',  rawBeta:0.85,de:0.55},
+  {name:'HPCL',  rawBeta:0.78,de:0.71},
+  {name:'IOC',   rawBeta:0.72,de:0.63},
+  {name:'ONGC',  rawBeta:0.66,de:0.28},
+  {name:'Petronet',rawBeta:0.60,de:0.35},
+];
+
+function calcRisk(){
+  const raw=gv('r-rawBeta'), de=gv('r-de');
+  const tax=gv('r-taxRate')/100, rf=gv('r-rf')/100;
+  const erp=gv('r-erp')/100, alpha=gv('r-alpha')/100;
+  const kd=gv('r-kd')/100, we=gv('r-we')/100, wd=gv('r-wd')/100;
+
+  const ub=raw/(1+(1-tax)*de);
+  const rb=ub*(1+(1-tax)*de);
+  const ke=rf+rb*erp+alpha;
+  const kdat=kd*(1-tax);
+  const wacc=we*ke+wd*kdat;
+
+  el('r-regbeta').textContent=n2(REG_BETA);
+
+  // Beta output
+  const bRows=[
+    ['Raw (Levered) Beta',n2(raw),'var(--text)'],
+    ['Regression Beta',n2(REG_BETA),'var(--blue)'],
+    ['Blume-Adjusted Beta',n2(blume(raw)),'var(--amber)'],
+    ['Unlevered Beta (βU)',n2(ub),'var(--text-mid)'],
+    ['Re-Levered Beta (βL)',n2(rb),'var(--gold)'],
+  ];
+  el('beta-output-rows').innerHTML=bRows.map(([l,v,c])=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(30,42,53,.3);">
+      <span class="mono" style="font-size:10px;color:var(--text-dim);">${l}</span>
+      <span class="mono" style="font-size:12px;color:${c};font-weight:500;">${v}</span>
+    </div>`).join('');
+
+  // CAPM output
+  const cRows=[
+    ['Cost of Equity (Ke)',pct(ke),'var(--gold)'],
+    ['After-Tax Cost of Debt',pct(kdat),'var(--text-mid)'],
+    ['WACC',pct(wacc),'var(--mint)'],
+  ];
+  el('capm-output-rows').innerHTML=cRows.map(([l,v,c])=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(30,42,53,.3);">
+      <span class="mono" style="font-size:10px;color:var(--text-dim);">${l}</span>
+      <span class="mono" style="font-size:13px;color:${c};font-weight:600;">${v}</span>
+    </div>`).join('');
+
+  // Risk metrics
+  const v=vol(SR),sh=sharpe(SR),so=sortino(SR),mdd=maxDD(STOCK),v95=VaR(SR,.95),v99=VaR(SR,.99);
+  const rMetrics=[
+    {l:'Ann. Vol',v:pct(v),s:'Historical',warn:v>.35},
+    {l:'Sharpe',v:n2(sh),s:'Ann / σ',accent:sh>1},
+    {l:'Sortino',v:n2(so),s:'Ann / Down σ',accent:so>1.5},
+    {l:'Max DD',v:pct(mdd),s:'1Y Period',warn:mdd>.3},
+    {l:'VaR 95%',v:pct(v95),s:'Daily',warn:true},
+    {l:'VaR 99%',v:pct(v99),s:'Daily',warn:true},
+  ];
+  el('risk-metrics-grid').innerHTML=rMetrics.map(k=>kpiHtml(k)).join('');
+
+  // Ke decomposition bars
+  const rfComp=rf, sysComp=rb*erp, alpComp=alpha;
+  const total=ke;
+  const keBars=[
+    {l:'Risk-Free Rate (Rf)',v:rfComp,c:'var(--blue)'},
+    {l:'Systematic Risk (β × ERP)',v:sysComp,c:'var(--gold)'},
+    {l:'Alpha Adjustment',v:alpComp,c:'var(--mint)'},
+  ];
+  el('ke-bars').innerHTML=keBars.map(({l,v,c})=>`
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div style="width:190px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-mid);">${l}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.max(0,v/total*100)}%;background:${c};"></div></div>
+      <span class="mono" style="font-size:11px;color:${c};font-weight:500;width:48px;text-align:right;">${pct(v)}</span>
+    </div>`).join('');
+  el('ke-total').textContent=pct(ke);
+
+  // Rolling vol chart
+  const rVol=[];
+  for(let i=30;i<SR.length;i++){
+    const w=SR.slice(i-30,i);
+    rVol.push(vol(w));
+  }
+  const minV=Math.min(...rVol), maxV=Math.max(...rVol);
+  const vy=v=>70-(v-minV)/(maxV-minV+.001)*68;
+  const vPts=rVol.map((v,i)=>`${i/(rVol.length-1)*600},${vy(v)}`).join(' ');
+  el('vol-svg').innerHTML=`
+    <polygon points="0,70 ${vPts} 600,70" fill="rgba(232,160,32,.12)"/>
+    <polyline points="${vPts}" fill="none" stroke="var(--amber)" stroke-width="1.5" stroke-linejoin="round"/>
+  `;
+  el('vol-current').textContent=`Current: ${pct(rVol[rVol.length-1])}`;
+
+  // Return distribution
+  const buckets=Array.from({length:20},(_,i)=>({c:-0.05+(i+.5)*.005,n:0}));
+  SR.forEach(r=>{const idx=Math.floor((r+.05)/.005);if(idx>=0&&idx<20)buckets[idx].n++;});
+  const maxN=Math.max(...buckets.map(b=>b.n));
+  el('ret-dist').innerHTML=buckets.map(b=>`
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;">
+      <div style="width:100%;height:${(b.n/maxN)*56}px;background:${b.c<0?'rgba(224,90,90,.6)':'rgba(46,204,143,.6)'};border-radius:2px 2px 0 0;min-height:${b.n>0?2:0}px;"></div>
+    </div>`).join('');
+
+  // Comp table
+  let compHtml='';
+  COMPS.forEach((c,i)=>{
+    const ub2=c.rawBeta/(1+(1-tax)*c.de);
+    const rb2=ub2*(1+(1-tax)*de);
+    const ke2=rf+rb2*erp;
+    compHtml+=`<tr>
+      <td style="color:var(--text-mid);">${c.name}</td>
+      <td>${n2(c.rawBeta)}</td>
+      <td>${n2(c.de)}</td>
+      <td>${n2(ub2)}</td>
+      <td class="td-text" style="font-weight:500;">${n2(rb2)}</td>
+      <td class="td-mint">${pct(ke2)}</td>
+    </tr>`;
+  });
+  // Median
+  const ubs=COMPS.map(c=>c.rawBeta/(1+(1-tax)*c.de)).sort((a,b)=>a-b);
+  const medUB=ubs[Math.floor(ubs.length/2)];
+  const medRB=medUB*(1+(1-tax)*de);
+  compHtml+=`<tr class="tr-total">
+    <td colspan="3">Median → Re-Levered to Target D/E</td>
+    <td>${n2(medUB)}</td>
+    <td style="font-weight:700;">${n2(medRB)}</td>
+    <td>${pct(rf+medRB*erp)}</td>
+  </tr>`;
+  el('comp-tbody').innerHTML=compHtml;
+
+  // Ke sensitivity
+  const betas=[rb-.3,rb-.15,rb,rb+.15,rb+.3];
+  const erps=[erp-.01,erp,erp+.01,erp+.02];
+  let ksSens=`<thead><tr>
+    <th style="text-align:left;">ERP ↓ β →</th>
+    ${betas.map(b=>`<th style="color:${Math.abs(b-rb)<.01?'var(--gold)':'var(--text-dim)'};font-weight:${Math.abs(b-rb)<.01?600:400};">${n2(b)}</th>`).join('')}
+  </tr></thead><tbody>`;
+  erps.forEach(e2=>{
+    ksSens+=`<tr><td style="color:${Math.abs(e2-erp)<.001?'var(--gold)':'var(--text-dim)'};font-weight:${Math.abs(e2-erp)<.001?600:400};font-family:'IBM Plex Mono',monospace;font-size:10px;">${pct(e2)}</td>`;
+    betas.forEach(b=>{
+      const val=rf+b*e2+alpha;
+      const isBase=Math.abs(b-rb)<.01&&Math.abs(e2-erp)<.001;
+      ksSens+=`<td style="padding:7px 14px;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:11px;background:${isBase?'var(--gold-faint)':'transparent'};color:${isBase?'var(--gold)':val>ke?'rgba(224,90,90,.8)':'rgba(46,204,143,.8)'};font-weight:${isBase?700:400};">${pct(val)}</td>`;
+    });
+    ksSens+='</tr>';
+  });
+  ksSens+='</tbody>';
+  el('ke-sens-table').innerHTML=ksSens;
+}
+
+['r-rawBeta','r-de','r-taxRate','r-rf','r-erp','r-alpha','r-kd','r-we','r-wd'].forEach(id=>{
+  const e=el(id); if(e) e.addEventListener('input',()=>{ if(el('tab-risk').classList.contains('active')) calcRisk(); });
+});
+
+/* ════ FINANCIALS ═══════════════════════════════════════════ */
+const HIST={
+  years:['FY21','FY22','FY23','FY24','FY25E'],
+  revenue:[520000,620000,760000,820000,880000],
+  ebitda:[88000,105000,138000,152000,163000],
+  ebit:[60000,77000,110000,124000,135000],
+  da:[28000,28000,28000,28000,28000],
+  pat:[44000,53000,60000,63000,66700],
+  eps:[65,78,89,93,98],
+};
+
+function barChart(svgId, data, color){
+  const svg=el(svgId); if(!svg) return;
+  const max=Math.max(...data);
+  const n=data.length, w=400, bw=w/n*.72, gap=w/n;
+  let html='';
+  data.forEach((v,i)=>{
+    const h=Math.max((v/max)*72,2);
+    const x=i*gap+(gap-bw)/2;
+    const y=80-h;
+    const isLast=i===n-1;
+    html+=`<rect x="${x}" y="${y}" width="${bw}" height="${h}" fill="${color}${isLast?'':'88'}" rx="2"/>`;
+    html+=`<text x="${x+bw/2}" y="78" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8" fill="var(--text-dim)">${HIST.years[i]}</text>`;
+  });
+  svg.innerHTML=html;
+}
+
+function renderFinancials(){
+  barChart('rev-chart', HIST.revenue,'#5a9ee0');
+  barChart('ebitda-chart', HIST.ebitda,'#c9a84c');
+
+  // P&L table
+  const rows=[
+    {l:'Revenue',data:HIST.revenue,fmt:cr,c:'td-text'},
+    {l:'  YoY Growth',data:HIST.revenue.map((v,i)=>i===0?null:(v-HIST.revenue[i-1])/HIST.revenue[i-1]),fmt:v=>v===null?'—':pct(v),c:'td-blue',i:true},
+    {l:'EBITDA',data:HIST.ebitda,fmt:cr,c:'td-text'},
+    {l:'  EBITDA Margin',data:HIST.ebitda.map((v,i)=>v/HIST.revenue[i]),fmt:pct,c:'td-gold',i:true},
+    {l:'Depreciation',data:HIST.da,fmt:cr,c:''},
+    {l:'EBIT',data:HIST.ebit,fmt:cr,c:'td-text'},
+    {l:'PAT',data:HIST.pat,fmt:cr,c:'td-mint'},
+    {l:'  Net Margin',data:HIST.pat.map((v,i)=>v/HIST.revenue[i]),fmt:pct,c:'td-mint',i:true},
+    {l:'EPS (₹)',data:HIST.eps,fmt:v=>`₹${n2(v)}`,c:''},
+  ];
+  let th=`<thead><tr><th style="text-align:left;">Metric</th>${HIST.years.map((y,i)=>`<th style="color:${i===4?'var(--gold)':'var(--text-dim)'};font-weight:${i===4?500:400};">${y}</th>`).join('')}</tr></thead><tbody>`;
+  let tb=rows.map(r=>`<tr>
+    <td style="padding-left:${r.i?'22px':'10px'};color:${r.i?'var(--text-dim)':'var(--text-mid)'};">${r.l}</td>
+    ${r.data.map((v,i)=>`<td class="${i===4?r.c:''}">${r.fmt(v)}</td>`).join('')}
+  </tr>`).join('');
+  el('pl-table').innerHTML=th+tb+'</tbody>';
+
+  // BS KPIs
+  const bsKpis=[
+    {l:'Total Assets',v:cr(1480000),s:'Latest'},
+    {l:'Net Worth',v:cr(680000),s:'Book Value'},
+    {l:'Net Debt',v:cr(120000),s:'Gross − Cash'},
+    {l:'ROCE',v:'10.2%',s:'Return on CE'},
+    {l:'ROE',v:'9.4%',s:'Return on Equity'},
+    {l:'Asset Turnover',v:'0.59x',s:'Rev / Assets'},
+    {l:'Current Ratio',v:'1.24',s:'Liquidity'},
+    {l:'Interest Cover',v:'6.8x',s:'EBIT / Interest'},
+  ];
+  el('bs-kpis').innerHTML=bsKpis.map(k=>kpiHtml(k)).join('');
+}
+
+/* ════ INTELLIGENCE (Anthropic API) ═════════════════════════ */
+async function generateInsights(){
+  const btn=el('gen-btn');
+  btn.textContent='⟳ Analysing...';
+  btn.style.opacity='.5';btn.style.cursor='not-allowed';
+  el('insight-idle').className='';
+  el('insight-loading').className='show';
+  el('insight-error').className='';
+  el('insight-result').className='';
+
+  const dcf=getDCFOutput();
+  const raw=gv('r-rawBeta'),de=gv('r-de'),tax=gv('r-taxRate')/100;
+  const rf=gv('r-rf')/100,erp=gv('r-erp')/100,alpha=gv('r-alpha')/100;
+  const ub=raw/(1+(1-tax)*de),rb=ub*(1+(1-tax)*de);
+  const ke=rf+rb*erp+alpha;
+  const kdat=gv('r-kd')/100*(1-tax);
+  const wacc=gv('r-we')/100*ke+gv('r-wd')/100*kdat;
+
+  const prompt=`You are a senior equity research analyst at Goldman Sachs India.
+Analyse this financial data and produce a structured investment research note.
+
+COMPANY: Reliance Industries Ltd (RELIANCE) — Energy · Petrochemicals · Telecom · Retail
+MARKET CAP: ₹19.5L Cr
+
+DCF OUTPUT:
+- Intrinsic Value/Share: ₹${n1(dcf.price)}
+- Enterprise Value: ${cr(dcf.ev)}
+- WACC: ${pct(wacc)}
+- Terminal Growth: ${pct(gv('i-tgr')/100)}
+- TV as % of EV: ${pct(dcf.pvTV/dcf.ev)}
+
+FINANCIALS (TTM):
+- Revenue: ₹8.8L Cr | EBITDA Margin: 18.5% | Net Margin: 7.6%
+- ROCE: 10.2% | EV/EBITDA: 10.8x | P/E: 27.4x
+- Net D/E: 0.42x | FCF Yield: 2.4%
+
+RISK:
+- Re-Levered Beta: ${n2(rb)}
+- Annual Volatility: ${pct(vol(SR))}
+- Sharpe Ratio: ${n2(sharpe(SR))}
+- Max Drawdown: ${pct(maxDD(STOCK))}
+- VaR (95%): ${pct(VaR(SR,.95))} daily
+- Cost of Equity: ${pct(ke)} | WACC: ${pct(wacc)}
+
+Respond ONLY in strict JSON, no preamble, no markdown fences:
+{"headline":"one decisive sentence","rating":"BUY|HOLD|SELL","targetPrice":number,"upside":number,"thesis":"2-3 sentences specific to drivers","bull":["3 specific bull points with numbers"],"bear":["3 specific bear risks with numbers"],"redFlags":["1-2 red flags or empty array"],"monitorables":["3 things to track"],"valComment":"2 sentences on valuation vs sector","riskComment":"2 sentences on risk profile"}`;
+
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})
+    });
+    const data=await res.json();
+    const raw2=data.content?.map(b=>b.text||'').join('').trim().replace(/```json|```/g,'').trim();
+    const ins=JSON.parse(raw2);
+    renderInsight(ins,ke,wacc,dcf.price);
+    el('insight-loading').className='';
+    el('insight-result').className='show fade-in';
+  }catch(e){
+    el('insight-loading').className='';
+    el('insight-error').className='show';
+  }
+  btn.textContent='↺ Refresh Analysis';
+  btn.style.opacity='1';btn.style.cursor='pointer';
+}
+
+function renderInsight(ins,ke,wacc,dcfPrice){
+  const rc=ins.rating==='BUY'?'var(--mint)':ins.rating==='SELL'?'var(--red)':'var(--amber)';
+  const rcDim=ins.rating==='BUY'?'rgba(46,204,143,.15)':ins.rating==='SELL'?'rgba(224,90,90,.15)':'rgba(232,160,32,.15)';
+  const up=ins.upside>=0;
+  el('insight-result').innerHTML=`
+    <!-- Headline card -->
+    <div style="background:linear-gradient(135deg,var(--panel),var(--panel-hi));border:1px solid ${rc}44;border-radius:8px;padding:22px 26px;position:relative;overflow:hidden;margin-bottom:14px;">
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,${rc}00,${rc},${rc}00);"></div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px;">
+        <div style="flex:1;">
+          <div class="serif" style="font-size:21px;font-weight:600;color:var(--text);line-height:1.3;margin-bottom:10px;">${ins.headline}</div>
+          <div class="mono" style="font-size:11px;color:var(--text-mid);line-height:1.6;">${ins.thesis}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0;">
+          <div style="background:${rcDim};border:1px solid ${rc}66;border-radius:5px;padding:8px 20px;text-align:center;">
+            <span class="mono" style="font-size:18px;font-weight:700;color:${rc};">${ins.rating}</span>
+          </div>
+          <div style="text-align:right;">
+            <div class="serif" style="font-size:26px;font-weight:600;color:var(--text);">₹${n1(ins.targetPrice)}</div>
+            <span class="mono" style="font-size:10px;color:${up?'var(--mint)':'var(--red)'};">${up?'▲':'▼'} ${Math.abs(ins.upside*100).toFixed(1)}% upside</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bull / Bear -->
+    <div class="grid-2" style="margin-bottom:14px;">
+      <div class="panel" style="border-color:rgba(46,204,143,.2);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--mint);"></div>
+          <span class="mono" style="font-size:10px;color:var(--mint);font-weight:600;text-transform:uppercase;letter-spacing:.12em;">Bull Case</span>
+        </div>
+        ${ins.bull.map((b,i)=>`<div style="display:flex;gap:9px;margin-bottom:9px;"><span class="mono" style="font-size:11px;color:var(--mint-dim);font-weight:600;">${i+1}.</span><span class="mono" style="font-size:11px;color:var(--text-mid);">${b}</span></div>`).join('')}
+      </div>
+      <div class="panel" style="border-color:rgba(224,90,90,.2);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--red);"></div>
+          <span class="mono" style="font-size:10px;color:var(--red);font-weight:600;text-transform:uppercase;letter-spacing:.12em;">Bear Case</span>
+        </div>
+        ${ins.bear.map((b,i)=>`<div style="display:flex;gap:9px;margin-bottom:9px;"><span class="mono" style="font-size:11px;color:rgba(224,90,90,.5);font-weight:600;">${i+1}.</span><span class="mono" style="font-size:11px;color:var(--text-mid);">${b}</span></div>`).join('')}
+      </div>
+    </div>
+
+    <!-- Red flags + Monitorables -->
+    <div class="grid-2" style="margin-bottom:14px;">
+      ${ins.redFlags&&ins.redFlags.length?`<div class="panel" style="border-color:rgba(224,90,90,.2);background:rgba(122,42,42,.1);">
+        <span class="mono" style="font-size:10px;color:var(--red);font-weight:600;text-transform:uppercase;letter-spacing:.12em;display:block;margin-bottom:10px;">⚠ Red Flags</span>
+        ${ins.redFlags.map(f=>`<div class="mono" style="font-size:11px;color:var(--text-mid);margin-bottom:7px;">• ${f}</div>`).join('')}
+      </div>`:`<div class="panel"><span class="mono" style="font-size:11px;color:var(--text-dim);">No material red flags identified at current levels.</span></div>`}
+      <div class="panel">
+        <span class="mono" style="font-size:10px;color:var(--amber);font-weight:600;text-transform:uppercase;letter-spacing:.12em;display:block;margin-bottom:10px;">Key Monitorables</span>
+        ${ins.monitorables.map(m=>`<div style="display:flex;gap:8px;margin-bottom:8px;"><span class="mono" style="font-size:11px;color:var(--gold-dim);">→</span><span class="mono" style="font-size:11px;color:var(--text-mid);">${m}</span></div>`).join('')}
+      </div>
+    </div>
+
+    <!-- Commentary -->
+    <div class="grid-2">
+      <div class="panel">
+        <span class="mono" style="font-size:10px;color:var(--blue);font-weight:600;text-transform:uppercase;letter-spacing:.12em;display:block;margin-bottom:10px;">Valuation Commentary</span>
+        <div class="serif" style="font-size:15px;color:var(--text-mid);line-height:1.65;font-style:italic;">"${ins.valComment}"</div>
+      </div>
+      <div class="panel">
+        <span class="mono" style="font-size:10px;color:var(--amber);font-weight:600;text-transform:uppercase;letter-spacing:.12em;display:block;margin-bottom:10px;">Risk Commentary</span>
+        <div class="serif" style="font-size:15px;color:var(--text-mid);line-height:1.65;font-style:italic;">"${ins.riskComment}"</div>
+      </div>
+    </div>
+  `;
+}
+
+/* ════ INIT ═════════════════════════════════════════════════ */
+renderOverview();
+calcDCF();
+calcRisk();
+renderFinancials();
+</script>
+</body>
+</html>
