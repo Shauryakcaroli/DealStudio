@@ -15,6 +15,7 @@ body{background:#090c10;color:#e8edf2;font-family:'IBM Plex Sans',sans-serif;min
 ::-webkit-scrollbar{width:4px;height:4px;}
 ::-webkit-scrollbar-track{background:#0d1117;}
 ::-webkit-scrollbar-thumb{background:#1e2a35;border-radius:2px;}
+.tab-panel.active{animation:fadeIn .25s ease;}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
 input:focus,select:focus{outline:none;}
 :root{--bg:#090c10;--surface:#0d1117;--panel:#111820;--panel-hi:#141e2a;--border:#1e2a35;--border-hi:#2a3a4a;--gold:#c9a84c;--gold-dim:#8a6e30;--gold-faint:#1a1507;--mint:#2ecc8f;--mint-dim:#1a7a55;--red:#e05a5a;--red-dim:#7a2a2a;--blue:#5a9ee0;--amber:#e8a020;--text:#e8edf2;--text-mid:#9aaab8;--text-dim:#6b7f92;}
@@ -76,7 +77,25 @@ input:focus,select:focus{outline:none;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
 .fade-in{animation:fadeIn .35s ease forwards;}.scroll-x{overflow-x:auto;}
 .ds-footer{text-align:center;padding:32px 0 18px;border-top:1px solid var(--border);margin-top:48px;}.ds-footer span{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;color:var(--text-dim);text-transform:uppercase;}.ds-footer .author{color:var(--gold-dim);font-weight:500;}
-/* Export UI */
+body.light{background:#f4f5f7;color:#1a1a2e;}
+body.light .grain,body.light .ambient{display:none;}
+body.light #nav{background:rgba(255,255,255,.95);border-color:#e0e0e0;}
+body.light .nav-tab{color:#666;}body.light .nav-tab.active{color:var(--gold);}
+body.light .panel,.light .kpi{background:#fff;border-color:#e8e8e8;}
+body.light #company-bar{background:#fafafa;border-color:#e0e0e0;}
+body.light .ds-table td{color:#444;border-color:#eee;}
+body.light .kpi-value{color:#1a1a2e;}body.light .kpi-label{color:#888;}
+body.light #content{color:#1a1a2e;}body.light .section-title{color:#1a1a2e;}
+body.light .company-select{background:#fff;border-color:#ddd;color:#333;}
+body.light .search-input{background:#fff;border-color:#ddd;color:#333;}
+body.light .screener-table td{color:#444;}body.light .screener-table th{color:#888;}
+@media print{body{background:#fff!important;color:#000!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+.grain,.ambient,#nav,#company-bar,.export-wrap,.nav-badge,.ds-btn,.search-wrap,.filter-pill,.add-tranche-btn,.compare-overlay,.export-toast,.export-menu{display:none!important;}
+#content{max-width:100%;padding:0;}.tab-panel{display:block!important;page-break-before:always;}.tab-panel:first-child{page-break-before:auto;}
+.panel{border:1px solid #ccc;break-inside:avoid;}.kpi{border:1px solid #ddd;break-inside:avoid;}
+.section-title::before{content:'DealStudio Pro — ';font-size:12px;color:#888;}
+@page{margin:1.5cm;size:A4 landscape;}}
+    /* Export UI */
 .export-wrap{position:relative;display:inline-block;}
 .export-trigger{display:flex;align-items:center;gap:6px;padding:4px 14px;border-radius:4px;border:1px solid var(--gold-dim);background:var(--gold-faint);color:var(--gold);font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;letter-spacing:.1em;text-transform:uppercase;font-weight:500;transition:all .2s;white-space:nowrap;}
 .export-trigger:hover{background:rgba(201,168,76,.12);border-color:var(--gold);}
@@ -189,7 +208,7 @@ Export
 <div class="export-item" onclick="exportTab('intelligence')"><span>Intelligence Report</span><span>→</span></div>
 <div class="export-item ei-all" onclick="exportAll()"><span>⚡ Export All (Multi-Sheet)</span><span>⬇</span></div>
 </div></div>
-<div class="nav-badge">Local · No API · Confidential</div>
+<button onclick="document.body.classList.toggle('light')" style="background:transparent;border:1px solid var(--border);border-radius:4px;padding:3px 10px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;letter-spacing:.08em;">☀/☾</button><div class="nav-badge" id="nav-badge">Local · No API · Confidential</div>
 </div></div>
 <div id="company-bar"><div class="cbar">
 <select class="company-select" id="company-select" onchange="loadCompany(this.value)"></select>
@@ -220,7 +239,7 @@ Export
 <div style="display:flex;align-items:center;gap:5px;"><div style="width:18px;height:1px;background:var(--blue);border-radius:1px;"></div><span class="mono" style="font-size:10px;color:var(--text-dim);">NIFTY 50</span></div></div>
 <svg id="perf-svg" width="100%" height="84" viewBox="0 0 800 84" preserveAspectRatio="none" style="display:block;"></svg></div></div>
 <div style="display:flex;gap:12px;align-items:center;margin-bottom:14px;flex-wrap:wrap;">
-    <div id="ov-verdict"></div>
+    <div id="ov-verdict"></div><div class="mono" style="font-size:9px;color:var(--text-dim);" id="ov-timestamp"></div>
     <div id="ov-upside-badge" style="display:none;"></div>
     <div style="flex:1;"></div>
     <button class="ds-btn" onclick="openComparison()" style="font-size:9px;padding:5px 14px;">⇄ Compare</button>
@@ -345,7 +364,7 @@ Export
 <div id="insight-result"></div></div>
 <div id="tab-screener" class="tab-panel">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;">
-    <div><div class="section-title">Equity Screener</div><div class="section-sub">All companies · DCF-implied upside · Sortable · Click any row to analyse</div></div>
+    <div><div class="section-title">Equity Screener</div><div class="section-sub">All companies · DCF-implied upside · Sortable · Click any row to analyse</div></div><button class="ds-btn" onclick="exportScreener()" style="font-size:9px;padding:5px 14px;flex-shrink:0;">⬇ Export Screener</button>
   </div>
   <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap;">
     <span class="label" style="margin-right:4px;">Cap:</span>
@@ -353,11 +372,16 @@ Export
     <button class="filter-pill" onclick="filterCap('large',this)">Large</button>
     <button class="filter-pill" onclick="filterCap('mid',this)">Mid</button>
     <button class="filter-pill" onclick="filterCap('small',this)">Small</button>
+    <span style="width:1px;height:16px;background:var(--border);display:inline-block;margin:0 8px;"></span>
+<span class="label" style="margin-right:4px;">Sector:</span>
+<select class="company-select" id="sector-filter" onchange="filterSector(this.value)" style="min-width:160px;padding:3px 24px 3px 8px;font-size:10px;">
+<option value="all">All Sectors</option>
+</select>
   </div>
   <div class="screener-stats" id="screener-stats"></div>
   <div class="rule"><span class="label accent">Top 5 Opportunities (by DCF Upside)</span><div class="rule-line"></div></div>
   <div class="grid-5" style="margin-bottom:20px;" id="top-opps"></div>
-  <div class="rule"><span class="label accent">Full Universe</span><div class="rule-line"></div></div>
+  <div class="rule"><span class="label accent">Full Universe</span><span class="mono" style="font-size:9px;color:var(--text-dim);margin-left:auto;" id="screener-count"></span><div class="rule-line"></div></div>
   <div class="scroll-x">
     <table class="screener-table" id="screener-tbl">
       <thead><tr>
@@ -912,7 +936,7 @@ let currentCo='reliance',histOverrides={},isOverridden=false,tranches=[];
 function init(){const sel=el('company-select');const groups={large:'── Large Cap ──',mid:'── Mid Cap ──',small:'── Small Cap ──'};const byGroup={large:[],mid:[],small:[]};Object.entries(COMPANIES).forEach(([k,v])=>{byGroup[v.cap]=byGroup[v.cap]||[];byGroup[v.cap].push([k,v]);});['large','mid','small'].forEach(g=>{const og=document.createElement('optgroup');og.label=groups[g];byGroup[g].forEach(([k,v])=>{const o=document.createElement('option');o.value=k;o.textContent=`${v.ticker} — ${v.name}`;og.appendChild(o);});sel.appendChild(og);});sel.value='reliance';loadCompany('reliance');}
 function showTab(tab){document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));el('tab-'+tab).classList.add('active');const map={overview:'Overview',valuation:'Valuation',wacc:'WACC',risk:'Risk',financials:'Financials',insights:'Intelligence',screener:'Screener'};document.querySelectorAll('.nav-tab').forEach(t=>{t.classList.toggle('active',t.textContent===map[tab]);});if(tab==='screener')renderScreener();}
 function loadCompany(key){currentCo=key;const co=COMPANIES[key];histOverrides={};isOverridden=false;el('override-warning').style.display='none';el('co-sector').textContent=co.sector.split('·')[0].trim();el('co-cap').textContent=co.cap.toUpperCase()+' CAP';el('co-cap').className='cap-badge cap-'+co.cap;const d=co.dcf;sv('i-baseRev',d.baseRev);sv('i-revGrowth',d.revGrowth);sv('i-ebitdaMargin',d.ebitdaMargin);sv('i-taxRate',d.taxRate);sv('i-da',d.da);sv('i-capex',d.capex);sv('i-nwcPct',d.nwcPct);sv('i-netDebt',d.netDebt);sv('i-shares',d.shares);sv('i-years',d.years);sv('i-wacc',d.wacc);sv('i-tgr',d.tgr);sv('i-exitMult',d.exitMult);const w=co.wacc;sv('w-rf',w.rf);sv('w-erp',w.erp);sv('w-beta',w.beta);sv('w-crp',w.crp);sv('w-size',w.size);el('w-rating').value=w.rating;toggleKdManual();sv('w-tax',w.tax);sv('w-equity-val',w.equityVal);sv('w-debt-val',w.debtVal);sv('w-interest',w.interest);tranches=w.tranches.map(t=>({...t}));renderTranches();const r=co.risk;sv('r-rawBeta',r.rawBeta);sv('r-de',r.de);sv('r-taxRate',r.taxRate);sv('r-rf',r.rf);sv('r-erp',r.erp);sv('r-alpha',r.alpha);sv('r-kd',r.kd);sv('r-we',r.we);sv('r-wd',r.wd);renderOverview();calcDCF();calcWACC();calcRisk();renderFinancials();renderVerdict();el('insight-idle').className='show';el('insight-loading').className='';el('insight-error').className='';el('insight-result').className='';el('insight-result').innerHTML='';}
-function renderOverview(){const co=COMPANIES[currentCo];el('ov-company').textContent=co.name;el('ov-ticker').textContent=co.ticker;el('ov-sector-full').textContent=co.sector;el('ov-mcap').textContent=co.mcap;el('ov-ticker-leg').textContent=co.ticker;const ret=co.ret1y;el('ov-perf').textContent=(ret>=0?'+':'')+n1(ret*100)+'%';el('ov-perf').style.color=ret>=0?'var(--mint)':'var(--red)';const stock=getStock(co.seed),bench=BENCH;const sn=stock.map(v=>v/stock[0]),bn=bench.map(v=>v/bench[0]);const all=[...sn,...bn],mn=Math.min(...all),mx=Math.max(...all);const sx=i=>(i/(sn.length-1))*800,sy=v=>84-((v-mn)/(mx-mn||1))*80;let sp='',bp='';sn.forEach((v,i)=>{sp+=(i?'L':'M')+sx(i)+','+sy(v);});bn.forEach((v,i)=>{bp+=(i?'L':'M')+sx(i)+','+sy(v);});el('perf-svg').innerHTML=`<path d="${bp}" fill="none" stroke="#5a9ee0" stroke-width="1" opacity=".5"/><path d="${sp}" fill="none" stroke="#c9a84c" stroke-width="1.5"/>`;const k=co.kpis,h=co.hist;const latestRev=h.revenue[h.revenue.length-1],latestEbitda=h.ebitda[h.ebitda.length-1];const margin=latestEbitda/latestRev;el('ov-kpis-1').innerHTML=[kpiCard('Revenue',cr(latestRev),h.years[h.years.length-1],'accent'),kpiCard('EBITDA',cr(latestEbitda),`Margin ${n1(margin*100)}%`),kpiCard('PAT',cr(h.pat[h.pat.length-1]),''),kpiCard('EV/EBITDA',n1(k.evEbitda)+'x',''),kpiCard('P/E',n1(k.pe)+'x','')].join('');el('ov-kpis-2').innerHTML=[kpiCard('RoCE',n1(k.roce)+'%',''),kpiCard('RoE',n1(k.roe)+'%',''),kpiCard('Net D/E',n2(k.netDE)+'x',k.netDE<0?'Net Cash':''),kpiCard('FCF Yield',n1(k.fcfYield)+'%',''),kpiCard('Current Ratio',n2(k.currentRatio)+'x',''),kpiCard('Interest Cover',n1(k.interestCover)+'x',''),kpiCard('1Y Return',(ret>=0?'+':'')+n1(ret*100)+'%','',ret>=0?'':'warn'),kpiCard('Mkt Cap',co.mcap,'')].join('');}
+function renderOverview(){const co=COMPANIES[currentCo];el('ov-company').textContent=co.name;el('ov-ticker').textContent=co.ticker;el('ov-sector-full').textContent=co.sector;el('ov-mcap').textContent=co.mcap;el('ov-ticker-leg').textContent=co.ticker;const ret=co.ret1y;el('ov-perf').textContent=(ret>=0?'+':'')+n1(ret*100)+'%';el('ov-perf').style.color=ret>=0?'var(--mint)':'var(--red)';const stock=getStock(co.seed),bench=BENCH;const sn=stock.map(v=>v/stock[0]),bn=bench.map(v=>v/bench[0]);const all=[...sn,...bn],mn=Math.min(...all),mx=Math.max(...all);const sx=i=>(i/(sn.length-1))*800,sy=v=>84-((v-mn)/(mx-mn||1))*80;let sp='',bp='';sn.forEach((v,i)=>{sp+=(i?'L':'M')+sx(i)+','+sy(v);});bn.forEach((v,i)=>{bp+=(i?'L':'M')+sx(i)+','+sy(v);});el('perf-svg').innerHTML=`<path d="${bp}" fill="none" stroke="#5a9ee0" stroke-width="1" opacity=".5"/><path d="${sp}" fill="none" stroke="#c9a84c" stroke-width="1.5"/>`;const k=co.kpis,h=co.hist;const latestRev=h.revenue[h.revenue.length-1],latestEbitda=h.ebitda[h.ebitda.length-1];const margin=latestEbitda/latestRev;el('ov-kpis-1').innerHTML=[kpiCard('Revenue',cr(latestRev),h.years[h.years.length-1],'accent'),kpiCard('EBITDA',cr(latestEbitda),`Margin ${n1(margin*100)}%`),kpiCard('PAT',cr(h.pat[h.pat.length-1]),''),kpiCard('EV/EBITDA',n1(k.evEbitda)+'x',''),kpiCard('P/E',n1(k.pe)+'x','')].join('');el('ov-kpis-2').innerHTML=[kpiCard('RoCE',n1(k.roce)+'%',''),kpiCard('RoE',n1(k.roe)+'%',''),kpiCard('Net D/E',n2(k.netDE)+'x',k.netDE<0?'Net Cash':''),kpiCard('FCF Yield',n1(k.fcfYield)+'%',''),kpiCard('Current Ratio',n2(k.currentRatio)+'x',''),kpiCard('Interest Cover',n1(k.interestCover)+'x',''),kpiCard('1Y Return',(ret>=0?'+':'')+n1(ret*100)+'%','',ret>=0?'':'warn'),kpiCard('Mkt Cap',co.mcap,'')].join('');el('ov-timestamp').textContent='Last loaded: '+new Date().toLocaleString('en-IN',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});}
 function kpiCard(label,value,sub,cls=''){return`<div class="kpi ${cls}"><div class="kpi-label">${label}</div><div class="kpi-value">${value}</div>${sub?`<div class="kpi-sub">${sub}</div>`:''}</div>`;}
 function calcDCF(){const baseRev=gv('i-baseRev'),g=gv('i-revGrowth')/100,em=gv('i-ebitdaMargin')/100,t=gv('i-taxRate')/100;const da=gv('i-da'),capex=gv('i-capex'),nwcPct=gv('i-nwcPct')/100,wacc=gv('i-wacc')/100;const tgr=gv('i-tgr')/100,exitMult=gv('i-exitMult'),netDebt=gv('i-netDebt'),shares=gv('i-shares');const years=clamp(Math.round(gv('i-years')),3,10);const proj=[];let pvSum=0;for(let y=1;y<=years;y++){const rev=baseRev*Math.pow(1+g,y);const ebitda=rev*em;const ebit=ebitda-da;const nopat=ebit*(1-t);const fcff=nopat+da-capex-rev*nwcPct;const pv=fcff/Math.pow(1+wacc,y);pvSum+=pv;proj.push({y,g,rev,ebitda,ebit,nopat,fcff,pv});}const lastFCFF=proj[proj.length-1].fcff;const lastEBITDA=proj[proj.length-1].ebitda;const tvGGM=(wacc>tgr)?lastFCFF*(1+tgr)/(wacc-tgr):0;const tvExit=lastEBITDA*exitMult;const tv=(tvGGM+tvExit)/2;const pvTV=tv/Math.pow(1+wacc,years);const ev=pvSum+pvTV;const eqVal=ev-netDebt;const pricePerShare=shares>0?eqVal/shares:0;const tvPct=ev>0?pvTV/ev:0;const tbody=el('proj-tbody');tbody.innerHTML='';proj.forEach(p=>{tbody.innerHTML+=`<tr><td class="td-text">Year ${p.y}</td><td>${n1(g*100)}%</td><td>${cr(p.rev)}</td><td>${cr(p.ebitda)}</td><td>${cr(p.ebit)}</td><td>${cr(p.nopat)}</td><td class="td-mint">${cr(p.fcff)}</td><td class="td-gold">${cr(p.pv)}</td></tr>`;});tbody.innerHTML+=`<tr class="tr-total"><td>Terminal Value</td><td colspan="5" style="text-align:center;">GGM: ${cr(tvGGM)} · Exit: ${cr(tvExit)} · Blended: ${cr(tv)}</td><td>${cr(tv)}</td><td>${cr(pvTV)}</td></tr>`;el('dcf-output-rows').innerHTML=[outRow('PV of FCFFs',cr(pvSum)),outRow('PV of Terminal Value',cr(pvTV)),outRow('Enterprise Value',cr(ev)),outRow('(-) Net Debt',cr(netDebt)),outRow('Equity Value',cr(eqVal)),outRow('TV as % of EV',n1(tvPct*100)+'%')].join('');el('dcf-price').textContent=pricePerShare>0?`₹${Math.round(pricePerShare).toLocaleString('en-IN')}`:'₹—';buildSensitivity(wacc,tgr,pricePerShare,proj,years,netDebt,shares,da,capex,baseRev,nwcPct,em,t,g);}
 function outRow(label,val){return`<div style="display:flex;justify-content:space-between;padding:4px 0;"><span class="mono" style="font-size:10px;color:var(--text-dim);">${label}</span><span class="mono" style="font-size:11px;color:var(--text-mid);">${val}</span></div>`;}
@@ -1003,7 +1027,7 @@ function renderVerdict(){
 }
  
 // ═══ SCREENER ═══
-var screenerData=[],screenerSort={col:'upside',dir:-1},screenerFilterCap='all';
+var screenerData=[],screenerSort={col:'upside',dir:-1},var screenerFilterCap='all',screenerFilterSector='all';
 function buildScreenerData(){
   screenerData=[];
   Object.entries(COMPANIES).forEach(function(e){
@@ -1014,7 +1038,7 @@ function buildScreenerData(){
 }
 function renderScreener(){
   buildScreenerData();
-  var filtered=screenerData.filter(function(d){return screenerFilterCap==='all'||d.cap===screenerFilterCap;});
+  var filtered=screenerData.filter(function(d){return(screenerFilterCap==='all'||d.cap===screenerFilterCap)&&(screenerFilterSector==='all'||d.sector===screenerFilterSector);});
   var col=screenerSort.col,dir=screenerSort.dir;
   filtered.sort(function(a,b){var va=a[col],vb=b[col];if(typeof va==='string')return dir*va.localeCompare(vb);return dir*((va||0)-(vb||0));});
   var totalCos=filtered.length,buyCount=filtered.filter(function(d){return d.verdict==='UNDERVALUED';}).length;
@@ -1024,7 +1048,7 @@ function renderScreener(){
   el('screener-stats').innerHTML='<div class="screener-stat"><span class="screener-stat-label">Companies</span><span class="screener-stat-val">'+totalCos+'</span></div><div class="screener-stat"><span class="screener-stat-label">Undervalued</span><span class="screener-stat-val" style="color:var(--mint);">'+buyCount+'</span></div><div class="screener-stat"><span class="screener-stat-label">Overvalued</span><span class="screener-stat-val" style="color:var(--red);">'+sellCount+'</span></div><div class="screener-stat"><span class="screener-stat-label">Avg DCF Upside</span><span class="screener-stat-val" style="color:'+(avgUpside>=0?'var(--mint)':'var(--red)')+';">'+(avgUpside*100).toFixed(1)+'%</span></div><div class="screener-stat"><span class="screener-stat-label">Avg RoCE</span><span class="screener-stat-val">'+avgROCE.toFixed(1)+'%</span></div>';
   var topOps=filtered.slice().sort(function(a,b){return b.upside-a.upside;}).slice(0,5);
   el('top-opps').innerHTML=topOps.map(function(d,i){return'<div class="opp-card" onclick="selectSearchResult(\''+d.key+'\')"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;"><div class="opp-rank">#'+(i+1)+'</div><div class="verdict-badge '+(d.upside>0.15?'verdict-up':d.upside<-0.1?'verdict-dn':'verdict-neutral')+'">'+(d.upside>=0?'+':'')+(d.upside*100).toFixed(0)+'%</div></div><div class="mono" style="font-size:10px;color:var(--gold);font-weight:500;">'+d.ticker+'</div><div class="mono" style="font-size:9px;color:var(--text-dim);margin-top:2px;">'+(d.name.length>28?d.name.slice(0,26)+'…':d.name)+'</div><div style="display:flex;justify-content:space-between;margin-top:8px;"><div><div class="mono" style="font-size:8px;color:var(--text-dim);">EV/EBITDA</div><div class="mono" style="font-size:11px;color:var(--text);">'+n1(d.evEbitda)+'x</div></div><div><div class="mono" style="font-size:8px;color:var(--text-dim);">RoCE</div><div class="mono" style="font-size:11px;color:var(--text);">'+n1(d.roce)+'%</div></div></div></div>';}).join('');
-  var tbody=el('screener-tbody');
+  el('screener-count').textContent='Showing '+filtered.length+' of '+screenerData.length+' companies';var tbody=el('screener-tbody');
   tbody.innerHTML=filtered.map(function(d){
     var uc=d.upside>0.15?'var(--mint)':d.upside<-0.1?'var(--red)':'var(--amber)';
     var vc=d.verdict==='UNDERVALUED'?'verdict-up':d.verdict==='OVERVALUED'?'verdict-dn':'verdict-neutral';
@@ -1045,23 +1069,7 @@ function openComparison(){
 }
 function closeComparison(){el('compare-overlay').classList.remove('show');}
 function renderComparison(){
-  var keys=compareKeys;
-  var metrics=[
-    {l:'Mkt Cap',get:function(k){return COMPANIES[k].mcap;}},
-    {l:'Revenue',get:function(k){return cr(COMPANIES[k].hist.revenue[4]);}},
-    {l:'EBITDA',get:function(k){return cr(COMPANIES[k].hist.ebitda[4]);}},
-    {l:'Rev Growth',get:function(k){return n1(COMPANIES[k].dcf.revGrowth)+'%';}},
-    {l:'EBITDA Margin',get:function(k){return n1(COMPANIES[k].dcf.ebitdaMargin)+'%';}},
-    {l:'EV/EBITDA',get:function(k){return n1(COMPANIES[k].kpis.evEbitda)+'x';}},
-    {l:'P/E',get:function(k){return n1(COMPANIES[k].kpis.pe)+'x';}},
-    {l:'RoCE',get:function(k){return n1(COMPANIES[k].kpis.roce)+'%';}},
-    {l:'RoE',get:function(k){return n1(COMPANIES[k].kpis.roe)+'%';}},
-    {l:'Net D/E',get:function(k){return n2(COMPANIES[k].kpis.netDE)+'x';}},
-    {l:'FCF Yield',get:function(k){return n1(COMPANIES[k].kpis.fcfYield)+'%';}},
-    {l:'Beta',get:function(k){return n2(COMPANIES[k].risk.rawBeta);}},
-    {l:'WACC',get:function(k){return n1(COMPANIES[k].dcf.wacc)+'%';}},
-    {l:'DCF Upside',get:function(k){var u=calcUpsideForKey(k);return(u.upside>=0?'+':'')+(u.upside*100).toFixed(1)+'%';}},
-    {l:'Verdict',get:function(k){return calcUpsideForKey(k).verdict;}}
+  function renderComparison(){var keys=compareKeys;var numMetrics=[{l:'Rev Growth',get:function(k){return COMPANIES[k].dcf.revGrowth;},fmt:function(v){return n1(v)+'%';},high:true},{l:'EBITDA Margin',get:function(k){return COMPANIES[k].dcf.ebitdaMargin;},fmt:function(v){return n1(v)+'%';},high:true},{l:'EV/EBITDA',get:function(k){return COMPANIES[k].kpis.evEbitda;},fmt:function(v){return n1(v)+'x';},high:false},{l:'P/E',get:function(k){return COMPANIES[k].kpis.pe;},fmt:function(v){return n1(v)+'x';},high:false},{l:'RoCE',get:function(k){return COMPANIES[k].kpis.roce;},fmt:function(v){return n1(v)+'%';},high:true},{l:'RoE',get:function(k){return COMPANIES[k].kpis.roe;},fmt:function(v){return n1(v)+'%';},high:true},{l:'FCF Yield',get:function(k){return COMPANIES[k].kpis.fcfYield;},fmt:function(v){return n1(v)+'%';},high:true},{l:'Net D/E',get:function(k){return COMPANIES[k].kpis.netDE;},fmt:function(v){return n2(v)+'x';},high:false},{l:'Beta',get:function(k){return COMPANIES[k].risk.rawBeta;},fmt:function(v){return n2(v);},high:false},{l:'WACC',get:function(k){return COMPANIES[k].dcf.wacc;},fmt:function(v){return n1(v)+'%';},high:false},{l:'DCF Upside',get:function(k){return calcUpsideForKey(k).upside*100;},fmt:function(v){return(v>=0?'+':'')+n1(v)+'%';},high:true}];var txtMetrics=[{l:'Mkt Cap',get:function(k){return COMPANIES[k].mcap;}},{l:'Verdict',get:function(k){return calcUpsideForKey(k).verdict;}}];var colW=keys.length===3?'1fr 1fr 1fr':'1fr 1fr';var html='<div style="display:grid;grid-template-columns:160px '+colW+';gap:0;border:1px solid var(--border);border-radius:6px;overflow:hidden;">';html+='<div style="padding:12px;background:var(--panel-hi);border-bottom:1px solid var(--border);"></div>';keys.forEach(function(k){var co=COMPANIES[k];html+='<div style="padding:12px;background:var(--panel-hi);border-bottom:1px solid var(--border);border-left:1px solid var(--border);"><div class="serif" style="font-size:14px;font-weight:600;color:var(--text);">'+(co.name.length>22?co.name.slice(0,20)+'…':co.name)+'</div><div class="mono" style="font-size:10px;color:var(--gold);margin-top:4px;">'+co.ticker+'</div></div>';});txtMetrics.forEach(function(m){html+='<div style="padding:7px 12px;border-bottom:1px solid rgba(30,42,53,.2);"><span class="mono" style="font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.1em;">'+m.l+'</span></div>';keys.forEach(function(k){html+='<div style="padding:7px 12px;border-bottom:1px solid rgba(30,42,53,.2);border-left:1px solid var(--border);text-align:right;"><span class="mono" style="font-size:11px;color:var(--text-mid);">'+m.get(k)+'</span></div>';});});numMetrics.forEach(function(m){var vals=keys.map(function(k){return m.get(k);});var best=m.high?Math.max.apply(null,vals):Math.min.apply(null,vals);html+='<div style="padding:7px 12px;border-bottom:1px solid rgba(30,42,53,.2);"><span class="mono" style="font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.1em;">'+m.l+'</span></div>';keys.forEach(function(k,i){var v=vals[i];var isBest=v===best;html+='<div style="padding:7px 12px;border-bottom:1px solid rgba(30,42,53,.2);border-left:1px solid var(--border);text-align:right;'+(isBest?'background:rgba(46,204,143,.06);':'')+'"><span class="mono" style="font-size:11px;'+(isBest?'color:var(--mint);font-weight:600;':'color:var(--text-mid);')+'">'+m.fmt(v)+'</span></div>';});});html+='</div>';el('compare-content').innerHTML=html;}
   ];
   var colW=keys.length<=2?'1fr 1fr':keys.length===3?'1fr 1fr 1fr':'1fr 1fr 1fr 1fr';
   var html='<div style="display:grid;grid-template-columns:160px '+colW+';gap:0;border:1px solid var(--border);border-radius:6px;overflow:hidden;">';
@@ -1074,6 +1082,7 @@ function renderComparison(){
   html+='</div>';
   el('compare-content').innerHTML=html;
 }
-init();renderScreener();
+function exportScreener(){if(typeof XLSX==='undefined')return;buildScreenerData();var rows=[['DealStudio Pro — Equity Screener','','','','','','','','','','',''],['Generated',new Date().toLocaleDateString('en-IN')],[],['Ticker','Company','Cap','Sector','EV/EBITDA','P/E','RoCE %','RoE %','FCF Yield %','Net D/E','1Y Return %','DCF Upside %','Verdict']];screenerData.forEach(function(d){rows.push([d.ticker,d.name,d.cap.toUpperCase(),d.sector,d.evEbitda,d.pe,d.roce,d.roe,d.fcfYield,d.netDE,(d.ret1y*100).toFixed(1),(d.upside*100).toFixed(1),d.verdict]);});var wb=XLSX.utils.book_new();var ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:12},{wch:30},{wch:8},{wch:18},{wch:10},{wch:8},{wch:8},{wch:8},{wch:10},{wch:8},{wch:10},{wch:12},{wch:14}];XLSX.utils.book_append_sheet(wb,ws,'Screener');XLSX.writeFile(wb,'DealStudio_Screener_'+new Date().toISOString().slice(0,10)+'.xlsx');showToast('Screener → Excel');}function populateSectorFilter(){var sectors={};Object.values(COMPANIES).forEach(function(co){if(co.ticker==='CUSTOM')return;var s=co.sector.split('·')[0].trim();sectors[s]=1;});var sel=el('sector-filter');var opts='<option value="all">All Sectors</option>';Object.keys(sectors).sort().forEach(function(s){opts+='<option value="'+s+'">'+s+'</option>';});sel.innerHTML=opts;}
+function filterSector(val){screenerFilterSector=val;renderScreener();}document.addEventListener('keydown',function(e){if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return;var tabs={1:'overview',2:'valuation',3:'wacc',4:'risk',5:'financials',6:'insights',7:'screener'};if(e.key>='1'&&e.key<='7'&&!e.ctrlKey&&!e.metaKey){e.preventDefault();showTab(tabs[e.key]);}if(e.key==='/'&&!e.ctrlKey){e.preventDefault();el('co-search').focus();}});window.addEventListener('scroll',function(){el('scroll-top').style.display=window.scrollY>400?'block':'none';});init();populateSectorFilter();el('nav-badge').textContent=(Object.keys(COMPANIES).length-1)+' Companies · Local · No API';renderScreener();
 document.querySelectorAll('.tab-panel').forEach(p=>{const f=document.createElement('div');f.className='ds-footer';f.innerHTML='Made by <span class="author">Shaurya Krishna Caroli</span>';p.appendChild(f);});
-</script></body></html>
+</script><button id="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="position:fixed;bottom:24px;left:24px;width:36px;height:36px;border-radius:50%;background:var(--panel);border:1px solid var(--border);color:var(--gold);font-size:16px;cursor:pointer;z-index:400;display:none;transition:opacity .2s;">↑</button></body></html>
